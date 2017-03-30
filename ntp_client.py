@@ -15,7 +15,7 @@ class NTPClient:
     WRONG_SERVER_ERROR = 2
 
     @staticmethod
-    def send_packet(server, port, version):
+    def _internal_send_packet(server, port, version):
         packet = NTPPacket(transmit=time.time() + NTPClient.FORMAT_DIFF)
         answer = NTPPacket(version_number=version)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -28,18 +28,30 @@ class NTPClient:
         return answer, arrive_time
 
     @staticmethod
-    def get_information_from_server(server="pool.ntp.org", port=123, version=2, debug_mode=False):
+    def send_packet(server, port, version):
         try:
-            packet, arrive_time = NTPClient.send_packet(server=server, port=port, version=version)
+            packet, arrive_time = NTPClient._internal_send_packet(server=server, port=port, version=version)
         except socket.timeout:
-            return NTPClient.SERVER_DIDNT_RESPOND_ERROR, ""
+            return NTPClient.SERVER_DIDNT_RESPOND_ERROR, None, None
         except socket.gaierror:
-            return NTPClient.WRONG_SERVER_ERROR, ""
+            return NTPClient.WRONG_SERVER_ERROR, None, None
+
+        return NTPClient.NO_ERRORS, packet, arrive_time
+
+    @staticmethod
+    def get_information_from_server(server="pool.ntp.org", port=123, version=2, debug_mode=False):
+        error, packet, arrive_time = NTPClient.send_packet(server, port, version)
+
+        if not error == NTPClient.NO_ERRORS:
+            if error == NTPClient.SERVER_DIDNT_RESPOND_ERROR:
+                return "Server didnt respond"
+            if error == NTPClient.WRONG_SERVER_ERROR:
+                return "Wrong server"
 
         time_different = packet.get_time_different(arrive_time)
-        result = "Time different: {}\nServer time: {}".format(
+        result = "Time difference: {}\nServer time: {}".format(
                             time_different,
                             datetime.datetime.fromtimestamp(time.time() + time_different).strftime("%c"))
         if debug_mode:
             result += "\n" + packet.to_display()
-        return NTPClient.NO_ERRORS, result
+        return result

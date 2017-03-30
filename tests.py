@@ -2,7 +2,6 @@ import unittest
 import ntp_client
 import ntp_packet
 import mock
-import time
 
 
 class PseudoPacket(ntp_packet.NTPPacket):
