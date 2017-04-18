@@ -1,33 +1,37 @@
 import argparse
 import socket
 import threading
+
 from ntp_client import NTPClient
+from ntp_packet import NTPPacket
 
 
 def run_server(delay, port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("localhost", port))
-        sock.listen(10)
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.bind(("127.0.0.1", port))
 
         while True:
-            connection, address = sock.accept()
-            print("connected " + str(address))
-            connection.recv(1024)
-            thread = threading.Thread(target=handle_connection, args=(delay, connection))
+            data, address = sock.recvfrom(1024)
+
+            print("Connected: ", address)
+
+            packet = NTPPacket().unpack(data)
+
+            thread = threading.Thread(target=handle_connection, args=(packet, sock, address, delay))
             thread.start()
 
 
-def handle_connection(delay, connection):
-    error, packet, arrive_time = NTPClient.send_packet("pool.ntp.org", 123, 2)
+def handle_connection(packet, sock, address, delay):
+    error, packet, arrive_time = NTPClient.send_packet("pool.ntp.org", 123, 2, packet)
 
     if not error == NTPClient.NO_ERRORS:
-        connection.sendall(b"Server error")
+        sock.sendto(b"Server error", address)
 
     packet.reference += delay
     packet.receive += delay
     packet.transmit += delay
 
-    connection.sendall(packet.pack())
+    sock.sendto(packet.pack(), address)
 
 
 if __name__ == "__main__":

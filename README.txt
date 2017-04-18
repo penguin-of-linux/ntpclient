@@ -11,7 +11,7 @@ default:
 Deceiving SNTP server and client
 run: sntp.py [-d delay] [-p port]
 default:
-	delay: 5 seconds
+	delay: 5 seconds ( < 100000000)
 	port: 123
 
 by Kirill Khapov

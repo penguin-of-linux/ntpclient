@@ -53,6 +53,8 @@ class NTPPacket:
         self.receive = unpacked_data[11] + unpacked_data[12] / 2 ** 32  # 8 bytes
         self.transmit = unpacked_data[13] + unpacked_data[14] / 2 ** 32  # 8 bytes
 
+        return self
+
     def pack(self):
         return struct.pack(NTPPacket._FORMAT,
                            (self.leap_indicator << 6) + (self.version_number << 3) + self.mode,

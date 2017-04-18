@@ -15,8 +15,9 @@ class NTPClient:
     WRONG_SERVER_ERROR = 2
 
     @staticmethod
-    def _internal_send_packet(server, port, version):
-        packet = NTPPacket(transmit=time.time() + NTPClient.FORMAT_DIFF)
+    def _internal_send_packet(server, port, version, packet=None):
+        if not packet:
+            packet = NTPPacket(transmit=time.time() + NTPClient.FORMAT_DIFF)
         answer = NTPPacket(version_number=version)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.settimeout(NTPClient.WAITING_TIME)
@@ -28,9 +29,9 @@ class NTPClient:
         return answer, arrive_time
 
     @staticmethod
-    def send_packet(server, port, version):
+    def send_packet(server, port, version, packet=None):
         try:
-            packet, arrive_time = NTPClient._internal_send_packet(server=server, port=port, version=version)
+            packet, arrive_time = NTPClient._internal_send_packet(server=server, port=port, version=version, packet=packet)
         except socket.timeout:
             return NTPClient.SERVER_DIDNT_RESPOND_ERROR, None, None
         except socket.gaierror:
