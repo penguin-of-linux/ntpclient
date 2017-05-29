@@ -1,4 +1,4 @@
-from ntp_packet import NTPPacket
+from ntp_packet import NTPPacket, UnpackError
 
 import socket
 import datetime
@@ -13,6 +13,7 @@ class NTPClient:
     NO_ERRORS = 0
     SERVER_DIDNT_RESPOND_ERROR = 1
     WRONG_SERVER_ERROR = 2
+    WRONG_PACKET_FORMAT = 3
 
     @staticmethod
     def _internal_send_packet(server, port, version, packet=None):
@@ -36,6 +37,8 @@ class NTPClient:
             return NTPClient.SERVER_DIDNT_RESPOND_ERROR, None, None
         except socket.gaierror:
             return NTPClient.WRONG_SERVER_ERROR, None, None
+        except UnpackError:
+            return NTPClient.WRONG_PACKET_FORMAT, None, None
 
         return NTPClient.NO_ERRORS, packet, arrive_time
 
@@ -48,6 +51,8 @@ class NTPClient:
                 return "Server didnt respond"
             if error == NTPClient.WRONG_SERVER_ERROR:
                 return "Wrong server"
+            if error == NTPClient.WRONG_PACKET_FORMAT:
+                return "Wrong packet format"
 
         time_different = packet.get_time_different(arrive_time)
         result = "Time difference: {}\nServer time: {}".format(

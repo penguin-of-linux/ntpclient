@@ -33,7 +33,10 @@ class NTPPacket:
         self.transmit = transmit
 
     def unpack(self, data: bytes):
-        unpacked_data = struct.unpack(NTPPacket._FORMAT, data)
+        try:
+            unpacked_data = struct.unpack(NTPPacket._FORMAT, data)
+        except:
+            raise UnpackError()
 
         self.leap_indicator = unpacked_data[0] >> 6  # 2 bits
         self.version_number = unpacked_data[0] >> 3 & 0b111  # 3 bits
@@ -105,6 +108,11 @@ class NTPPacket:
             self.originate == other.originate and \
             self.receive == other.receive and \
             self.transmit == other.transmit
+
+
+class UnpackError(Exception):
+    def __init__(self):
+        super().__init__()
 
 
 def get_fraction(number, precision):
